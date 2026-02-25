@@ -154,6 +154,17 @@ export default function ShuttleSquadsPro() {
               {loading ? <RefreshCw className="animate-spin" size={16}/> : 'Fetch Telemetry'}
             </button>
           </div>
+
+          <div className="bg-white/70 backdrop-blur-xl border border-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 hidden xl:block">
+            <h3 className="font-black text-slate-800 mb-3 flex items-center gap-2">
+              <Activity size={18} className="text-blue-500"/> Architecture
+            </h3>
+            <ul className="text-xs text-slate-500 space-y-3">
+              <li className="flex gap-2 leading-relaxed"><ChevronRight size={14} className="text-indigo-400 shrink-0 mt-0.5"/> <span><strong className="text-slate-700">Event-Driven:</strong> Webhooks stream live match resolutions.</span></li>
+              <li className="flex gap-2 leading-relaxed"><ChevronRight size={14} className="text-indigo-400 shrink-0 mt-0.5"/> <span><strong className="text-slate-700">Glicko-2 Math:</strong> Tracks Team Rating, Volatility, and RD.</span></li>
+              <li className="flex gap-2 leading-relaxed"><ChevronRight size={14} className="text-indigo-400 shrink-0 mt-0.5"/> <span><strong className="text-slate-700">O(1) Fetch:</strong> Latency reduced to &lt;50ms via DB caching.</span></li>
+            </ul>
+          </div>
           
           <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4">
             <h3 className="font-black text-sm uppercase tracking-widest text-indigo-400 flex items-center gap-2">
@@ -173,7 +184,7 @@ export default function ShuttleSquadsPro() {
               <Trophy size={64} className="text-slate-200 mb-4" />
               <h3 className="text-slate-600 font-black text-2xl">Awaiting Telemetry Sync</h3>
               <p className="text-slate-400 text-sm mt-3 max-w-md leading-relaxed">
-                Connect to a tournament ID to begin the Glicko-2 telemetry sync.
+                The Glicko-2 engine will generate power rankings and visual insights as soon as the first match in the tournament finishes.
               </p>
             </div>
           )}
@@ -207,12 +218,12 @@ export default function ShuttleSquadsPro() {
                         <tr className="border-b-2 border-slate-100 text-slate-400 uppercase tracking-widest text-[10px] font-black">
                           <th className="p-4">Rank</th>
                           <th className="p-4">Franchise</th>
-                          <th className="p-4 w-1/3">Power Rating</th>
+                          <th className="p-4 w-1/3">Glicko-2 Power Rating</th>
                           <th className="p-4">AI Projection</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {data.map((team) => (
+                        {data.map((team, idx) => (
                           <tr key={team.team} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors group">
                             <td className="p-4 font-black text-slate-400 group-hover:text-indigo-500 transition-colors">#{team.rank}</td>
                             <td className="p-4 font-bold text-slate-700">{team.team}</td>
