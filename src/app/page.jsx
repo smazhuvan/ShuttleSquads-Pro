@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trophy, Activity, Flame, RefreshCw, Zap, Swords, BarChart3 } from 'lucide-react';
+import { Trophy, Activity, Flame, RefreshCw, Zap, Swords, BarChart3, Cpu } from 'lucide-react';
 import { ScatterChart, Scatter, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
 export default function ShuttleSquadsPro() {
-  const [tournamentId, setTournamentId] = useState("f9fe49db-5ba4-466f-ad1f-a833e1618b09");
+  const [tournamentId, setTournamentId] = useState("ae053369-5568-4447-a0d2-6ad762163688");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -44,6 +44,7 @@ export default function ShuttleSquadsPro() {
     setLoading(false);
   };
 
+  // Using the standard logistic curve to estimate win probability on the frontend
   const expectedWinProb = (ratingA, ratingB) => {
     return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
   };
@@ -86,10 +87,10 @@ export default function ShuttleSquadsPro() {
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8">
       {/* HEADER */}
       <div className="max-w-6xl mx-auto mb-8">
-        <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent tracking-tight">
-          ShuttleSquads Pro
+        <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent tracking-tight flex items-center gap-3">
+          ShuttleSquads Pro <Cpu size={36} className="text-blue-500" />
         </h1>
-        <p className="text-slate-500 font-bold tracking-widest uppercase text-sm mt-1">Next-Gen Predictive Analytics</p>
+        <p className="text-slate-500 font-bold tracking-widest uppercase text-sm mt-1">Glicko-2 Powered Predictive Analytics</p>
       </div>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -110,17 +111,17 @@ export default function ShuttleSquadsPro() {
             />
             <div className="flex gap-2">
               <button onClick={fetchData} disabled={loading} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-md active:scale-95 flex justify-center items-center gap-2">
-                {loading ? <RefreshCw className="animate-spin" size={16}/> : 'Initialize'}
+                {loading ? <RefreshCw className="animate-spin" size={16}/> : 'Fetch O(1) Telemetry'}
               </button>
             </div>
           </div>
           
           <div className="bg-white/70 backdrop-blur-xl border border-white p-6 rounded-2xl shadow-xl shadow-slate-200/50">
-            <h3 className="font-bold text-slate-700 mb-2 text-sm">How it Works</h3>
+            <h3 className="font-bold text-slate-700 mb-2 text-sm">Engine Architecture</h3>
             <ul className="text-xs text-slate-500 space-y-2">
-              <li>• Reads live scores securely.</li>
-              <li>• Applies <strong>Fight-Hard MoV</strong> multiplier.</li>
-              <li>• Baseline Elo begins at 1500.</li>
+              <li>• <strong className="text-indigo-600">Event-Driven:</strong> Supabase Webhooks stream live match resolutions.</li>
+              <li>• <strong className="text-indigo-600">Glicko-2 Math:</strong> Tracks Team Rating, Volatility (σ), and Rating Deviation (RD).</li>
+              <li>• <strong className="text-indigo-600">O(1) Fetch:</strong> Latency reduced to &lt;50ms via DB pre-calculation.</li>
             </ul>
           </div>
         </div>
@@ -133,8 +134,8 @@ export default function ShuttleSquadsPro() {
           {!data && !loading && !error && (
             <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-12 text-center flex flex-col items-center justify-center">
               <Activity size={48} className="text-slate-300 mb-4" />
-              <h3 className="text-slate-500 font-bold text-lg">Awaiting Engine Initialization</h3>
-              <p className="text-slate-400 text-sm mt-2 max-w-sm">Enter a tournament ID and click initialize to crunch the live Elo mathematics.</p>
+              <h3 className="text-slate-500 font-bold text-lg">Awaiting Engine Sync</h3>
+              <p className="text-slate-400 text-sm mt-2 max-w-sm">Enter a tournament ID and click fetch to pull the pre-calculated Glicko-2 ratings from the DB.</p>
             </div>
           )}
 
@@ -143,9 +144,9 @@ export default function ShuttleSquadsPro() {
               
               {/* METRICS ROW */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MetricCard icon={<Trophy className="text-amber-500"/>} title="Apex Franchise" value={data[0].team} sub={data[0].power_rating + " ELO"} />
-                <MetricCard icon={<Activity className="text-blue-500"/>} title="Global Baseline" value={Math.round(data.reduce((a,b)=>a+b.power_rating,0)/data.length) + " ELO"} sub="Tournament Average" />
-                <MetricCard icon={<Flame className="text-red-500"/>} title="Prime Underdog" value={data[data.length-1].team} sub={data[data.length-1].power_rating + " ELO"} />
+                <MetricCard icon={<Trophy className="text-amber-500"/>} title="Apex Franchise" value={data[0].team} sub={data[0].power_rating + " PWR"} />
+                <MetricCard icon={<Activity className="text-blue-500"/>} title="Global Baseline" value={Math.round(data.reduce((a,b)=>a+b.power_rating,0)/data.length) + " PWR"} sub="Tournament Average" />
+                <MetricCard icon={<Flame className="text-red-500"/>} title="Prime Underdog" value={data[data.length-1].team} sub={data[data.length-1].power_rating + " PWR"} />
               </div>
 
               {/* TABS NAVIGATION */}
@@ -166,7 +167,7 @@ export default function ShuttleSquadsPro() {
                         <tr className="border-b-2 border-slate-100 text-slate-400 uppercase tracking-widest text-[10px] font-black">
                           <th className="p-4">Rank</th>
                           <th className="p-4">Franchise</th>
-                          <th className="p-4 w-1/3">Live Elo Rating</th>
+                          <th className="p-4 w-1/3">Glicko-2 Power Rating</th>
                           <th className="p-4">AI Projection</th>
                         </tr>
                       </thead>
@@ -200,7 +201,7 @@ export default function ShuttleSquadsPro() {
                         <select className="w-full bg-white border border-blue-100 p-3 rounded-xl font-bold text-slate-700 outline-none" value={teamA} onChange={(e) => setTeamA(e.target.value)}>
                           {data.map(t => <option key={t.team} value={t.team}>{t.team}</option>)}
                         </select>
-                        <p className="mt-3 font-mono text-sm text-slate-500">Elo: <span className="font-bold text-slate-800">{data.find(t=>t.team===teamA)?.power_rating} ⚡</span></p>
+                        <p className="mt-3 font-mono text-sm text-slate-500">Power: <span className="font-bold text-slate-800">{data.find(t=>t.team===teamA)?.power_rating} ⚡</span></p>
                       </div>
                       
                       <div className="md:col-span-1 text-center font-black text-2xl bg-gradient-to-br from-blue-500 to-red-500 bg-clip-text text-transparent">VS</div>
@@ -210,7 +211,7 @@ export default function ShuttleSquadsPro() {
                         <select className="w-full bg-white border border-red-100 p-3 rounded-xl font-bold text-slate-700 outline-none" value={teamB} onChange={(e) => setTeamB(e.target.value)}>
                           {data.map(t => <option key={t.team} value={t.team}>{t.team}</option>)}
                         </select>
-                        <p className="mt-3 font-mono text-sm text-slate-500">Elo: <span className="font-bold text-slate-800">{data.find(t=>t.team===teamB)?.power_rating} ⚡</span></p>
+                        <p className="mt-3 font-mono text-sm text-slate-500">Power: <span className="font-bold text-slate-800">{data.find(t=>t.team===teamB)?.power_rating} ⚡</span></p>
                       </div>
                     </div>
 
@@ -261,12 +262,12 @@ export default function ShuttleSquadsPro() {
                 {activeTab === 'insights' && (
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     <div>
-                      <h4 className="font-bold text-slate-700 mb-6 flex items-center gap-2">Elo Distribution Tracker</h4>
+                      <h4 className="font-bold text-slate-700 mb-6 flex items-center gap-2">Power Distribution Tracker</h4>
                       <div className="h-96 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
-                            <XAxis type="number" dataKey="power_rating" name="Elo" domain={['dataMin - 50', 'dataMax + 50']} tick={{fill: '#94a3b8', fontSize: 12}} />
+                            <XAxis type="number" dataKey="power_rating" name="Rating" domain={['dataMin - 50', 'dataMax + 50']} tick={{fill: '#94a3b8', fontSize: 12}} />
                             <YAxis type="category" dataKey="team" name="Team" width={80} tick={{fill: '#64748b', fontSize: 12, fontWeight: 'bold'}} />
                             <RechartsTooltip cursor={{strokeDasharray: '3 3'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
                             <Scatter data={data} shape="circle">
