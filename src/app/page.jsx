@@ -18,7 +18,6 @@ export default function ShuttleSquadsPro() {
     setLoading(true);
     setError(null);
     try {
-      // Point this to your Render URL in production!
       const res = await fetch(`https://shuttlesquadspro.onrender.com/api/power-rankings/${tournamentId}`);
       const json = await res.json();
       if (json.error) throw new Error(json.error);
@@ -44,7 +43,6 @@ export default function ShuttleSquadsPro() {
     setLoading(false);
   };
 
-  // Using the standard logistic curve to estimate win probability on the frontend
   const expectedWinProb = (ratingA, ratingB) => {
     return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
   };
@@ -57,7 +55,6 @@ export default function ShuttleSquadsPro() {
     }
   };
 
-  // Matrix Generation for Heatmap
   const matrix = useMemo(() => {
     if (!data) return [];
     const grid = [];
@@ -139,7 +136,17 @@ export default function ShuttleSquadsPro() {
             </div>
           )}
 
-          {data && (
+          {/* EMPTY STATE - WAITING FOR FIRST MATCH */}
+          {data && data.length === 0 && (
+            <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-12 text-center flex flex-col items-center justify-center">
+              <Trophy size={48} className="text-amber-300 mb-4" />
+              <h3 className="text-slate-500 font-bold text-lg">Awaiting First Match Results</h3>
+              <p className="text-slate-400 text-sm mt-2 max-w-sm">The Glicko-2 engine will generate power rankings as soon as the first match in the tournament finishes.</p>
+            </div>
+          )}
+
+          {/* MAIN DASHBOARD - ONLY RENDER IF WE HAVE TEAMS */}
+          {data && data.length > 0 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
               
               {/* METRICS ROW */}
@@ -216,8 +223,8 @@ export default function ShuttleSquadsPro() {
                     </div>
 
                     {teamA !== teamB ? (() => {
-                      const eloA = data.find(t=>t.team===teamA).power_rating;
-                      const eloB = data.find(t=>t.team===teamB).power_rating;
+                      const eloA = data.find(t=>t.team===teamA)?.power_rating || 1500;
+                      const eloB = data.find(t=>t.team===teamB)?.power_rating || 1500;
                       const probA = expectedWinProb(eloA, eloB);
                       const { sa, sb } = predictScoreline(probA);
 
