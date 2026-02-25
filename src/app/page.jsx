@@ -4,7 +4,7 @@ import { Trophy, Activity, Flame, RefreshCw, Zap, Swords, BarChart3, Cpu, Chevro
 import { ScatterChart, Scatter, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
 export default function ShuttleSquadsPro() {
-  const [tournamentId, setTournamentId] = useState("c2008278-4b9d-48ac-8675-cdbab429daa2");
+  const [tournamentId, setTournamentId] = useState("ae053369-5568-4447-a0d2-6ad762163688");
   const [data, setData] = useState(null);
   const [futures, setFutures] = useState(null); // New State for Monte Carlo
   const [loading, setLoading] = useState(false);
