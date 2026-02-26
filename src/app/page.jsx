@@ -159,7 +159,7 @@ export default function ShuttleSquadsPro() {
               <Cpu size={36} className="text-indigo-500 dark:text-indigo-400 animate-pulse hidden md:block" />
             </h1>
             <p className="text-slate-500 dark:text-slate-400 font-bold tracking-[0.2em] uppercase text-xs mt-3 flex items-center gap-2">
-              Advanced BWF Analytics Engine <Zap size={12} className="text-amber-500 fill-amber-500" />
+              AI Powered Analytics Engine <Zap size={12} className="text-amber-500 fill-amber-500" />
             </p>
           </div>
           <div className="flex items-center gap-3">
