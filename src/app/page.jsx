@@ -75,6 +75,24 @@ export default function ShuttleSquadsPro() {
     setLoading(false);
   };
 
+  const handleNativeShare = async () => {
+    const shareUrl = `${window.location.origin}?tid=${tournamentId}`;
+    if (navigator.share) {
+      try { 
+        await navigator.share({ 
+          title: 'ShuttleSquads Oracle', 
+          text: `View live Glicko-2 ratings and bracket for tournament ${tournamentId?.substring(0,8)}...`, 
+          url: shareUrl 
+        }); 
+      } catch (err) { 
+        console.log('Share cancelled'); 
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      alert("Link copied to clipboard!");
+    }
+  };
+
   const expectedWinProb = (ratingA, ratingB) => 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
   const predictScoreline = (probA) => probA > 0.5 ? { sa: 21, sb: Math.min(Math.max(Math.floor(21 * (1 - probA) * 1.8), 0), 19) } : { sa: Math.min(Math.max(Math.floor(21 * probA * 1.8), 0), 19), sb: 21 };
   
