@@ -177,7 +177,7 @@ export default function ShuttleSquadsPro() {
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 text-white p-6 rounded-[2rem] shadow-xl hover:shadow-2xl hover:shadow-slate-900/50 transition-all duration-500 animate-fade-in-left animation-delay-150">
             <h3 className="font-black text-xs uppercase tracking-[0.2em] text-indigo-400 flex items-center gap-3 mb-6"><Binary size={16} className="animate-pulse"/> Metric Legend</h3>
             <ul className="text-[11px] text-slate-300 space-y-4 leading-relaxed">
-                <li className="flex gap-3 group"><Crosshair size={16} className="text-blue-400 shrink-0 group-hover:rotate-90 transition-transform duration-500"/> <span><strong className="text-white">Dominance (DQ):</strong> Ratio of points scored vs conceded. &gt1.0 is positive.</span></li>
+                <li className="flex gap-3 group"><Crosshair size={16} className="text-blue-400 shrink-0 group-hover:rotate-90 transition-transform duration-500"/> <span><strong className="text-white">Dominance (DQ):</strong> Ratio of points scored vs conceded. &gt;1.0 is positive.</span></li>
                 <li className="flex gap-3 group"><Snowflake size={16} className="text-cyan-400 shrink-0 group-hover:scale-125 transition-transform duration-500"/> <span><strong className="text-white">Clutch Rate:</strong> Win % in games decided by 3 points or less.</span></li>
                 <li className="flex gap-3 group"><Axe size={16} className="text-red-400 shrink-0 group-hover:-rotate-12 transition-transform duration-500"/> <span><strong className="text-white">Giant Killer:</strong> Defeated a heavily favored S-Tier opponent.</span></li>
             </ul>
