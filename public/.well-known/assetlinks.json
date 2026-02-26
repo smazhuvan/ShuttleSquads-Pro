@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.shuttlesquadspro.twa",
+        "sha256_cert_fingerprints": ["FA:3F:04:D8:4B:3D:F9:13:B7:17:E7:47:14:1F:E1:47:4B:06:AC:37:BB:27:99:BF:CE:59:40:32:DC:03:E3:D3"]
+      }
+    }]
