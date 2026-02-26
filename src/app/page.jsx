@@ -416,6 +416,21 @@ export default function ShuttleSquadsPro() {
           </div>
         </div>
       )}
+
+      {/* CREATOR STAMP */}
+      <div className="max-w-7xl mx-auto mt-12 pb-8 text-center animate-in fade-in duration-1000">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+          Architected & Engineered with ⚡ by{' '}
+          <a 
+            href="https://github.com/smazhuvan" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-indigo-500 hover:text-indigo-600 hover:underline underline-offset-4 transition-all"
+          >
+            Shivakumar Mazhuvan
+          </a>
+        </p>
+      </div>
       
       <style dangerouslySetInnerHTML={{__html: `.custom-scrollbar::-webkit-scrollbar { height: 8px; } .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }`}} />
     </div>
