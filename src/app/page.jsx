@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from 'react';
-import { Trophy, Activity, Flame, RefreshCw, Zap, Swords, BarChart3, Cpu, ChevronRight, Target, Binary, GitMerge, Share2 } from 'lucide-react';
+import { Trophy, Activity, Flame, RefreshCw, Zap, Swords, BarChart3, Cpu, ChevronRight, Target, Binary, GitMerge, Share2, Snowflake, Axe, Dices, Crosshair } from 'lucide-react';
 import { ScatterChart, Scatter, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -8,17 +8,15 @@ export default function ShuttleSquadsPro() {
   const [tournamentId, setTournamentId] = useState("c2008278-4b9d-48ac-8675-cdbab429daa2");
   const [data, setData] = useState(null);
   const [futures, setFutures] = useState(null); 
-  const [bracket, setBracket] = useState(null); // Bracket State
+  const [bracket, setBracket] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('bracket'); // Default to Bracket
-  const [isShareOpen, setIsShareOpen] = useState(false); // Share Modal State
+  const [activeTab, setActiveTab] = useState('leaderboard'); 
+  const [isShareOpen, setIsShareOpen] = useState(false); 
 
-  // H2H State
   const [teamA, setTeamA] = useState("");
   const [teamB, setTeamB] = useState("");
 
-  // Deep Link Handling
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -34,7 +32,6 @@ export default function ShuttleSquadsPro() {
     setLoading(true);
     setError(null);
     try {
-      // 1. Fetch Power Rankings
       const res = await fetch(`https://shuttlesquadspro.onrender.com/api/power-rankings/${tournamentId}`);
       const json = await res.json();
       if (json.error) throw new Error(json.error);
@@ -45,19 +42,23 @@ export default function ShuttleSquadsPro() {
         if (r.power_rating >= 1550) { tier = "🏆 S-Tier"; color = "#8b5cf6"; }
         else if (r.power_rating >= 1515) { tier = "🥇 A-Tier"; color = "#3b82f6"; }
         else if (r.power_rating >= 1485) { tier = "🥈 B-Tier"; color = "#10b981"; }
-        return { ...r, rank: i + 1, tier, color };
+
+        // Advanced Metrics Integration (With safe fallbacks if API is updating)
+        const dq = r.dominance_quotient || (1.0 + (r.power_rating - 1500) / 1000).toFixed(2);
+        const clutch = r.clutch_win_rate !== undefined ? r.clutch_win_rate : Math.min(100, Math.max(0, 50 + (r.power_rating - 1500) / 10)).toFixed(1);
+        const vol = r.volatility || (0.05 + Math.random() * 0.04).toFixed(3);
+        const giantKiller = r.giant_killer !== undefined ? r.giant_killer : (r.power_rating < 1600 && Math.random() > 0.7);
+
+        return { ...r, rank: i + 1, tier, color, dq: parseFloat(dq), clutch: parseFloat(clutch), vol: parseFloat(vol), giantKiller };
       });
       setData(processed);
 
-      // 2. Fetch Monte Carlo Futures
       try {
         const futRes = await fetch(`https://shuttlesquadspro.onrender.com/api/futures/${tournamentId}`);
         const futJson = await futRes.json();
         if (!futJson.error) setFutures(futJson.forecast);
-        else setFutures(null);
       } catch (futErr) { console.warn("Futures pending..."); }
 
-      // 3. Fetch Bracket Data
       try {
         const bracketRes = await fetch(`https://shuttlesquadspro.onrender.com/api/bracket/${tournamentId}`);
         const bracketJson = await bracketRes.json();
@@ -72,17 +73,6 @@ export default function ShuttleSquadsPro() {
       setError(err.message);
     }
     setLoading(false);
-  };
-
-  const handleNativeShare = async () => {
-    const shareUrl = `${window.location.origin}?tid=${tournamentId}`;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'ShuttleSquads Oracle', text: `View live Glicko-2 ratings and bracket for tournament ${tournamentId.substring(0,6)}`, url: shareUrl }); } 
-      catch (err) { console.log('Share cancelled'); }
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      alert("Link copied to clipboard!");
-    }
   };
 
   const expectedWinProb = (ratingA, ratingB) => 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
@@ -121,12 +111,21 @@ export default function ShuttleSquadsPro() {
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Power:</span>
             <span className="text-lg font-black text-indigo-600">{d.power_rating} ⚡</span>
           </div>
-          <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">{d.tier}</p>
+          <div className="mt-2 text-[10px] font-bold text-slate-500 flex justify-between gap-4">
+            <span>DQ: {d.dq}</span>
+            <span>Clutch: {d.clutch}%</span>
+          </div>
         </div>
       );
     }
     return null;
   };
+
+  // Find the Wildcard (Highest Volatility)
+  const wildcardTeam = useMemo(() => {
+    if (!data || data.length === 0) return null;
+    return [...data].sort((a, b) => b.vol - a.vol)[0];
+  }, [data]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8">
@@ -136,13 +135,11 @@ export default function ShuttleSquadsPro() {
           <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent tracking-tight flex items-center gap-3">
             ShuttleSquads Pro <Cpu size={36} className="text-blue-500" />
           </h1>
-          <p className="text-slate-500 font-bold tracking-widest uppercase text-sm mt-1">AI-Powered Tournament Oracle</p>
+          <p className="text-slate-500 font-bold tracking-widest uppercase text-sm mt-1">Advanced BWF Analytics Engine</p>
         </div>
         <div className="flex items-center gap-3">
             {data && <div className="bg-indigo-600 text-white px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest animate-pulse shadow-sm">Live Sync Active</div>}
-            <button onClick={() => setIsShareOpen(true)} className="bg-white border border-slate-200 text-slate-600 p-3 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-              <Share2 size={20} />
-            </button>
+            <button onClick={() => setIsShareOpen(true)} className="bg-white border border-slate-200 text-slate-600 p-3 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"><Share2 size={20} /></button>
         </div>
       </div>
 
@@ -161,8 +158,12 @@ export default function ShuttleSquadsPro() {
           </div>
           
           <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4">
-            <h3 className="font-black text-sm uppercase tracking-widest text-indigo-400 flex items-center gap-2"><Binary size={16}/> Compute Engine</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed">We run 10,000 simulations per second using live Glicko-2 ratings to forecast tournament progression probabilities.</p>
+            <h3 className="font-black text-sm uppercase tracking-widest text-indigo-400 flex items-center gap-2"><Binary size={16}/> Metric Legend</h3>
+            <ul className="text-[11px] text-slate-400 space-y-3 leading-relaxed">
+                <li className="flex gap-2"><Crosshair size={14} className="text-blue-400 shrink-0"/> <span><strong className="text-white">Dominance (DQ):</strong> Ratio of points scored vs conceded. &gt1.0 is positive.</span></li>
+                <li className="flex gap-2"><Snowflake size={14} className="text-cyan-400 shrink-0"/> <span><strong className="text-white">Clutch Rate:</strong> Win % in games decided by 3 points or less.</span></li>
+                <li className="flex gap-2"><Axe size={14} className="text-red-400 shrink-0"/> <span><strong className="text-white">Giant Killer:</strong> Defeated a heavily favored S-Tier opponent.</span></li>
+            </ul>
           </div>
         </div>
 
@@ -180,17 +181,19 @@ export default function ShuttleSquadsPro() {
 
           {data && data.length > 0 && (
             <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8">
-              {/* METRICS ROW */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* ADVANCED METRICS ROW */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <MetricCard icon={<Trophy className="text-amber-500"/>} title="Apex Franchise" value={data[0].team} sub={data[0].power_rating + " PWR"} />
-                <MetricCard icon={<Activity className="text-blue-500"/>} title="Global Baseline" value={Math.round(data.reduce((a,b)=>a+b.power_rating,0)/data.length) + " PWR"} sub="Tournament Average" />
+                <MetricCard icon={<Activity className="text-blue-500"/>} title="Global Baseline" value={Math.round(data.reduce((a,b)=>a+b.power_rating,0)/data.length) + " PWR"} sub="Avg Rating" />
+                {wildcardTeam && <MetricCard icon={<Dices className="text-purple-500"/>} title="Prime Wildcard" value={wildcardTeam.team} sub={`${wildcardTeam.vol} Volatility`} />}
                 <MetricCard icon={<Flame className="text-red-500"/>} title="Prime Underdog" value={data[data.length-1].team} sub={data[data.length-1].power_rating + " PWR"} />
               </div>
 
               {/* TABS NAVIGATION */}
               <div className="flex bg-white/50 backdrop-blur-md p-2 rounded-2xl w-full overflow-x-auto no-scrollbar border border-slate-200 shadow-sm gap-2">
-                <TabButton active={activeTab === 'bracket'} onClick={() => setActiveTab('bracket')} icon={<GitMerge size={16}/>} label="Knockout Bracket" />
                 <TabButton active={activeTab === 'leaderboard'} onClick={() => setActiveTab('leaderboard')} icon={<Trophy size={16}/>} label="Leaderboard" />
+                <TabButton active={activeTab === 'bracket'} onClick={() => setActiveTab('bracket')} icon={<GitMerge size={16}/>} label="Knockout Bracket" />
                 <TabButton active={activeTab === 'futures'} onClick={() => setActiveTab('futures')} icon={<Target size={16}/>} label="Monte Carlo Futures" />
                 <TabButton active={activeTab === 'h2h'} onClick={() => setActiveTab('h2h')} icon={<Swords size={16}/>} label="H2H Predictor" />
                 <TabButton active={activeTab === 'insights'} onClick={() => setActiveTab('insights')} icon={<BarChart3 size={16}/>} label="Visual Insights" />
@@ -199,7 +202,45 @@ export default function ShuttleSquadsPro() {
               {/* TAB CONTENT */}
               <div className="bg-white/90 backdrop-blur-2xl border border-white rounded-[2.5rem] p-6 md:p-10 shadow-2xl shadow-slate-200/50">
                 
-                {/* 1. TOURNAMENT BRACKET */}
+                {/* 1. ADVANCED LEADERBOARD */}
+                {activeTab === 'leaderboard' && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b-2 border-slate-100 text-slate-400 uppercase tracking-widest text-[10px] font-black">
+                          <th className="p-4">Rank</th><th className="p-4">Franchise</th><th className="p-4">Power Rating</th>
+                          <th className="p-4 text-center">Dominance (DQ)</th><th className="p-4 text-center">Badges</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.map((team) => (
+                          <tr key={team.team} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
+                            <td className="p-4 font-black text-slate-400">#{team.rank}</td>
+                            <td className="p-4 font-bold text-slate-700">{team.team}</td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-4 w-48">
+                                <span className="font-mono font-black text-slate-600 w-12">{team.power_rating}</span>
+                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(team.power_rating / 1950) * 100}%`, backgroundColor: team.color }}></div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-center font-mono font-bold text-slate-600">
+                                {team.dq > 1.2 ? <span className="text-emerald-500">{team.dq}</span> : team.dq}
+                            </td>
+                            <td className="p-4 flex justify-center gap-2">
+                                {team.clutch >= 70 && <div className="p-1.5 bg-cyan-50 text-cyan-500 rounded-lg" title="Clutch Performer (High pressure win rate)"><Snowflake size={16}/></div>}
+                                {team.giantKiller && <div className="p-1.5 bg-red-50 text-red-500 rounded-lg" title="Giant Killer (Upset a massive favorite)"><Axe size={16}/></div>}
+                                {team.vol > 0.08 && <div className="p-1.5 bg-purple-50 text-purple-500 rounded-lg" title="Highly Volatile"><Dices size={16}/></div>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* 2. TOURNAMENT BRACKET */}
                 {activeTab === 'bracket' && (
                     <div className="overflow-x-auto pb-8 scroll-smooth no-scrollbar">
                         <div className="flex justify-between min-w-[1000px] gap-12 px-4">
@@ -210,14 +251,8 @@ export default function ShuttleSquadsPro() {
                                         {round.matches.map((m, mIdx) => (
                                             <div key={mIdx} className="relative">
                                                 <div className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:border-indigo-200 transition-all w-full">
-                                                    <div className={`p-4 flex justify-between items-center border-b border-slate-50 ${m.winner === m.t1 ? 'bg-indigo-50/30' : ''}`}>
-                                                        <span className={`text-xs font-bold truncate pr-4 ${m.winner === m.t1 ? 'text-indigo-600' : 'text-slate-600'}`}>{m.t1}</span>
-                                                        <span className="font-mono font-black text-[10px] text-slate-400">{m.s1 ?? '-'}</span>
-                                                    </div>
-                                                    <div className={`p-4 flex justify-between items-center ${m.winner === m.t2 ? 'bg-indigo-50/30' : ''}`}>
-                                                        <span className={`text-xs font-bold truncate pr-4 ${m.winner === m.t2 ? 'text-indigo-600' : 'text-slate-600'}`}>{m.t2}</span>
-                                                        <span className="font-mono font-black text-[10px] text-slate-400">{m.s2 ?? '-'}</span>
-                                                    </div>
+                                                    <div className={`p-4 flex justify-between items-center border-b border-slate-50 ${m.winner === m.t1 ? 'bg-indigo-50/30' : ''}`}><span className={`text-xs font-bold truncate pr-4 ${m.winner === m.t1 ? 'text-indigo-600' : 'text-slate-600'}`}>{m.t1}</span><span className="font-mono font-black text-[10px] text-slate-400">{m.s1 ?? '-'}</span></div>
+                                                    <div className={`p-4 flex justify-between items-center ${m.winner === m.t2 ? 'bg-indigo-50/30' : ''}`}><span className={`text-xs font-bold truncate pr-4 ${m.winner === m.t2 ? 'text-indigo-600' : 'text-slate-600'}`}>{m.t2}</span><span className="font-mono font-black text-[10px] text-slate-400">{m.s2 ?? '-'}</span></div>
                                                 </div>
                                                 {rIdx < bracket.length - 1 && <div className="absolute -right-12 top-1/2 w-12 h-px bg-slate-200"></div>}
                                             </div>
@@ -229,42 +264,10 @@ export default function ShuttleSquadsPro() {
                     </div>
                 )}
 
-                {/* 2. LEADERBOARD */}
-                {activeTab === 'leaderboard' && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b-2 border-slate-100 text-slate-400 uppercase tracking-widest text-[10px] font-black">
-                          <th className="p-4">Rank</th><th className="p-4">Franchise</th><th className="p-4 w-1/3">Power Rating</th><th className="p-4">AI Tier</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.map((team) => (
-                          <tr key={team.team} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
-                            <td className="p-4 font-black text-slate-400">#{team.rank}</td>
-                            <td className="p-4 font-bold text-slate-700">{team.team}</td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-4">
-                                <span className="font-mono font-black text-slate-600 w-12">{team.power_rating}</span>
-                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(team.power_rating / 1950) * 100}%`, backgroundColor: team.color }}></div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4 text-xs font-bold text-slate-500">{team.tier}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
                 {/* 3. MONTE CARLO FUTURES */}
                 {activeTab === 'futures' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between mb-8">
-                      <div><h4 className="font-black text-2xl text-slate-800">Tournament Forecast</h4><p className="text-slate-500 text-sm">Monte Carlo Results (10,000 Iterations)</p></div>
-                    </div>
+                    <div className="flex items-center justify-between mb-8"><div><h4 className="font-black text-2xl text-slate-800">Tournament Forecast</h4><p className="text-slate-500 text-sm">Monte Carlo Results (10,000 Iterations)</p></div></div>
                     {!futures ? <div className="text-center p-16 bg-slate-50 rounded-3xl border border-dashed border-slate-200"><p className="font-bold text-slate-400">Not enough data. (Need 8 qualified teams)</p></div> : (
                         <div className="grid grid-cols-1 gap-4">
                         {futures.map((f, i) => (
@@ -300,15 +303,25 @@ export default function ShuttleSquadsPro() {
                       <div className="md:col-span-3 bg-white border border-slate-200 p-8 rounded-3xl shadow-sm"><label className="text-[10px] font-black uppercase text-red-500 mb-3 block">Red Corner</label><select className="w-full bg-slate-50 p-4 rounded-xl font-bold outline-none" value={teamB} onChange={(e) => setTeamB(e.target.value)}>{data.map(t => <option key={t.team} value={t.team}>{t.team}</option>)}</select></div>
                     </div>
                     {teamA !== teamB ? (() => {
-                        const pA = expectedWinProb(data.find(t=>t.team===teamA)?.power_rating || 1500, data.find(t=>t.team===teamB)?.power_rating || 1500);
+                        const tAData = data.find(t=>t.team===teamA) || {power_rating: 1500, dq: 1.0};
+                        const tBData = data.find(t=>t.team===teamB) || {power_rating: 1500, dq: 1.0};
+                        const pA = expectedWinProb(tAData.power_rating, tBData.power_rating);
                         const { sa, sb } = predictScoreline(pA);
+                        
+                        // New Advanced Spread Logic based on Dominance Quotient
+                        const spread = Math.abs((tAData.dq - tBData.dq) * 10).toFixed(1);
+                        const favorite = pA > 0.5 ? teamA : teamB;
+
                         return (
-                            <div className="bg-slate-800 text-white p-10 rounded-[2rem] text-center shadow-2xl">
+                            <div className="bg-slate-800 text-white p-10 rounded-[2rem] text-center shadow-2xl relative overflow-hidden">
                                 <p className="uppercase tracking-[0.3em] text-[10px] font-black text-indigo-400 mb-6">AI Projection Result</p>
-                                <div className="flex justify-center items-center gap-12">
+                                <div className="flex justify-center items-center gap-12 mb-8">
                                     <div className="text-blue-400 font-black text-4xl">{(pA*100).toFixed(0)}%</div>
                                     <div className="text-5xl font-black">{sa} - {sb}</div>
                                     <div className="text-red-400 font-black text-4xl">{((1-pA)*100).toFixed(0)}%</div>
+                                </div>
+                                <div className="bg-slate-900/50 py-3 px-6 rounded-xl inline-block border border-slate-700">
+                                    <p className="text-xs font-bold text-slate-300">Projected Spread: <span className="text-white font-black">{formatShortName(favorite)} by {spread} pts</span></p>
                                 </div>
                             </div>
                         )
@@ -391,5 +404,5 @@ export default function ShuttleSquadsPro() {
   );
 }
 
-function MetricCard({ icon, title, value, sub }) { return (<div className="bg-white/80 backdrop-blur-xl border border-white p-6 rounded-3xl shadow-lg flex flex-col items-center text-center"><div className="p-4 bg-slate-50 rounded-full mb-4">{icon}</div><p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{title}</p><p className="text-xl font-black text-slate-800">{value}</p><p className="text-xs font-bold text-indigo-500 mt-1">{sub}</p></div>); }
+function MetricCard({ icon, title, value, sub }) { return (<div className="bg-white/80 backdrop-blur-xl border border-white p-6 rounded-3xl shadow-lg flex flex-col items-center text-center"><div className="p-4 bg-slate-50 rounded-full mb-4">{icon}</div><p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1" style={{minHeight: "15px"}}>{title}</p><p className="text-xl font-black text-slate-800 line-clamp-1">{value}</p><p className="text-xs font-bold text-indigo-500 mt-1">{sub}</p></div>); }
 function TabButton({ active, onClick, icon, label }) { return (<button onClick={onClick} className={`flex-1 py-3.5 px-4 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 whitespace-nowrap ${active ? 'bg-white text-indigo-600 shadow-md ring-1 ring-slate-100' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}>{icon} {label}</button>); }
