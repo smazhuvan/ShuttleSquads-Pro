@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from 'react';
-import { Trophy, Activity, Flame, RefreshCw, Zap, Swords, BarChart3, Cpu, ChevronRight, Target, Binary, GitMerge, Share2, Snowflake, Axe, Dices, Crosshair, Moon, Sun, Heart } from 'lucide-react';
+import { Trophy, Activity, Flame, RefreshCw, Zap, Swords, BarChart3, Cpu, ChevronRight, Target, Binary, GitMerge, Share2, Snowflake, Axe, Dices, Crosshair, Moon, Sun, Heart, Shield } from 'lucide-react';
 import { ScatterChart, Scatter, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -13,10 +13,7 @@ export default function ShuttleSquadsPro() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('leaderboard'); 
   const [isShareOpen, setIsShareOpen] = useState(false); 
-  
-  // DARK MODE STATE
   const [isDark, setIsDark] = useState(false);
-
   const [teamA, setTeamA] = useState("");
   const [teamB, setTeamB] = useState("");
 
@@ -28,8 +25,6 @@ export default function ShuttleSquadsPro() {
         setTournamentId(sharedTid);
         window.history.replaceState({}, document.title, "/");
       }
-      
-      // Optional: Auto-detect system preference on load
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         setIsDark(true);
       }
@@ -51,12 +46,18 @@ export default function ShuttleSquadsPro() {
         else if (r.power_rating >= 1515) { tier = "🥇 A-Tier"; color = "#3b82f6"; }
         else if (r.power_rating >= 1485) { tier = "🥈 B-Tier"; color = "#10b981"; }
 
+        // Local Tournament Stats
         const dq = r.dominance_quotient || (1.0 + (r.power_rating - 1500) / 1000).toFixed(2);
         const clutch = r.clutch_win_rate !== undefined ? r.clutch_win_rate : Math.min(100, Math.max(0, 50 + (r.power_rating - 1500) / 10)).toFixed(1);
         const vol = r.volatility || (0.05 + Math.random() * 0.04).toFixed(3);
         const giantKiller = r.giant_killer !== undefined ? r.giant_killer : (r.power_rating < 1600 && Math.random() > 0.7);
 
-        return { ...r, rank: i + 1, tier, color, dq: parseFloat(dq), clutch: parseFloat(clutch), vol: parseFloat(vol), giantKiller };
+        // Global Career Stats (with fallbacks while API updates)
+        const careerMatches = r.career_matches || 0;
+        const careerWinRate = r.career_win_rate !== undefined ? r.career_win_rate : 0.0;
+        const veteranStatus = r.veteran_status || (careerMatches >= 10);
+
+        return { ...r, rank: i + 1, tier, color, dq: parseFloat(dq), clutch: parseFloat(clutch), vol: parseFloat(vol), giantKiller, careerMatches, careerWinRate, veteranStatus };
       });
       setData(processed);
 
@@ -85,7 +86,7 @@ export default function ShuttleSquadsPro() {
   const handleNativeShare = async () => {
     const shareUrl = `${window.location.origin}?tid=${tournamentId}`;
     if (navigator.share) {
-      try { await navigator.share({ title: 'ShuttleSquads Oracle', text: `View live Glicko-2 ratings and bracket for tournament ${tournamentId?.substring(0,8)}...`, url: shareUrl }); } 
+      try { await navigator.share({ title: 'ShuttleSquads Oracle', text: `View live ratings for ${tournamentId?.substring(0,8)}...`, url: shareUrl }); } 
       catch (err) { console.log('Share cancelled'); }
     } else {
       navigator.clipboard.writeText(shareUrl);
@@ -110,14 +111,6 @@ export default function ShuttleSquadsPro() {
     });
   }, [data]);
 
-  const getHeatmapColor = (prob) => {
-    if (prob > 0.8) return 'bg-emerald-500 text-white font-black shadow-inner';
-    if (prob > 0.6) return 'bg-emerald-300 text-emerald-900 font-bold';
-    if (prob > 0.4) return 'bg-yellow-200 text-yellow-900 font-bold';
-    if (prob > 0.2) return 'bg-orange-400 text-white font-bold';
-    return 'bg-red-500 text-white font-black shadow-inner';
-  };
-
   const wildcardTeam = useMemo(() => {
     if (!data || data.length === 0) return null;
     return [...data].sort((a, b) => b.vol - a.vol)[0];
@@ -132,10 +125,6 @@ export default function ShuttleSquadsPro() {
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Power:</span>
             <span className="text-lg font-black text-indigo-500">{d.power_rating} ⚡</span>
-          </div>
-          <div className="mt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 flex justify-between gap-4">
-            <span>DQ: {d.dq}</span>
-            <span>Clutch: {d.clutch}%</span>
           </div>
         </div>
       );
@@ -156,10 +145,9 @@ export default function ShuttleSquadsPro() {
             <h1 className="text-4xl md:text-6xl font-black tracking-tight flex items-center gap-4">
               <span className="bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 dark:from-indigo-400 dark:via-blue-400 dark:to-cyan-300 bg-clip-text text-transparent drop-shadow-sm">ShuttleSquads</span>
               <span className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-3 py-1 rounded-xl text-2xl md:text-3xl rotate-2 shadow-lg hover:rotate-0 transition-transform duration-300 cursor-default">PRO</span>
-              <Cpu size={36} className="text-indigo-500 dark:text-indigo-400 animate-pulse hidden md:block" />
             </h1>
             <p className="text-slate-500 dark:text-slate-400 font-bold tracking-[0.2em] uppercase text-xs mt-3 flex items-center gap-2">
-              AI Powered Analytics Engine <Zap size={12} className="text-amber-500 fill-amber-500" />
+              Global Franchise Analytics Engine <Zap size={12} className="text-amber-500 fill-amber-500" />
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -171,7 +159,6 @@ export default function ShuttleSquadsPro() {
                   </div>
                 </div>
               )}
-              {/* THEME TOGGLE BUTTON */}
               <button onClick={() => setIsDark(!isDark)} className="group bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 p-3 rounded-2xl hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1">
                 {isDark ? <Sun size={20} className="group-hover:scale-110 transition-transform text-amber-400" /> : <Moon size={20} className="group-hover:scale-110 transition-transform text-indigo-500" />}
               </button>
@@ -205,6 +192,7 @@ export default function ShuttleSquadsPro() {
               <ul className="text-[11px] text-slate-300 space-y-4 leading-relaxed">
                   <li className="flex gap-3 group"><Crosshair size={16} className="text-blue-400 shrink-0 group-hover:rotate-90 transition-transform duration-500"/> <span><strong className="text-white">Dominance (DQ):</strong> Ratio of points scored vs conceded. &gt;1.0 is positive.</span></li>
                   <li className="flex gap-3 group"><Snowflake size={16} className="text-cyan-400 shrink-0 group-hover:scale-125 transition-transform duration-500"/> <span><strong className="text-white">Clutch Rate:</strong> Win % in games decided by 3 points or less.</span></li>
+                  <li className="flex gap-3 group"><Shield size={16} className="text-amber-500 shrink-0 group-hover:scale-125 transition-transform duration-500"/> <span><strong className="text-white">Veteran:</strong> Franchise has played 10+ career matches globally.</span></li>
                   <li className="flex gap-3 group"><Axe size={16} className="text-red-400 shrink-0 group-hover:-rotate-12 transition-transform duration-500"/> <span><strong className="text-white">Giant Killer:</strong> Defeated a heavily favored S-Tier opponent.</span></li>
               </ul>
             </div>
@@ -251,11 +239,15 @@ export default function ShuttleSquadsPro() {
                   {/* 1. ADVANCED LEADERBOARD */}
                   {activeTab === 'leaderboard' && (
                     <div className="overflow-x-auto custom-scrollbar pb-4 animate-fade-in">
-                      <table className="w-full text-left border-collapse min-w-[800px]">
+                      <table className="w-full text-left border-collapse min-w-[900px]">
                         <thead>
                           <tr className="border-b-2 border-slate-100 dark:border-slate-800 text-slate-400 uppercase tracking-[0.2em] text-[10px] font-black">
-                            <th className="p-5">Rank</th><th className="p-5">Franchise</th><th className="p-5 w-1/3">Power Rating</th>
-                            <th className="p-5 text-center">Dominance (DQ)</th><th className="p-5 text-center">Badges</th>
+                            <th className="p-5">Rank</th>
+                            <th className="p-5">Franchise</th>
+                            <th className="p-5 w-1/4">Current Power</th>
+                            <th className="p-5 text-center">Career WR</th>
+                            <th className="p-5 text-center">Tourney DQ</th>
+                            <th className="p-5 text-center">Badges</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -264,7 +256,7 @@ export default function ShuttleSquadsPro() {
                               <td className="p-5 font-black text-slate-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">#{team.rank}</td>
                               <td className="p-5 font-bold text-slate-800 dark:text-slate-200 tracking-tight">{team.team}</td>
                               <td className="p-5">
-                                <div className="flex items-center gap-4 w-full max-w-[250px]">
+                                <div className="flex items-center gap-4 w-full">
                                   <span className="font-mono font-black text-slate-600 dark:text-slate-400 w-12">{team.power_rating}</span>
                                   <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                                     <div className="h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden" style={{ width: `${(team.power_rating / 1950) * 100}%`, backgroundColor: team.color }}>
@@ -273,10 +265,15 @@ export default function ShuttleSquadsPro() {
                                   </div>
                                 </div>
                               </td>
+                              <td className="p-5 text-center font-mono font-black text-slate-600 dark:text-slate-300">
+                                {team.careerMatches > 0 ? `${team.careerWinRate}%` : <span className="text-slate-300 dark:text-slate-600">---</span>}
+                                {team.careerMatches > 0 && <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{team.careerMatches} Matches</div>}
+                              </td>
                               <td className="p-5 text-center font-mono font-black">
                                   {team.dq > 1.2 ? <span className="text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-lg">{team.dq}</span> : <span className="text-slate-500 dark:text-slate-400">{team.dq}</span>}
                               </td>
-                              <td className="p-5 flex justify-center gap-2">
+                              <td className="p-5 flex justify-center gap-2 flex-wrap">
+                                  {team.veteranStatus && <div className="p-2 bg-amber-50 dark:bg-amber-500/10 text-amber-500 rounded-xl hover:scale-110 hover:shadow-md transition-all cursor-help" title="Veteran (10+ Career Matches)"><Shield size={18}/></div>}
                                   {team.clutch >= 70 && <div className="p-2 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-500 rounded-xl hover:scale-110 hover:shadow-md transition-all cursor-help" title="Clutch Performer"><Snowflake size={18}/></div>}
                                   {team.giantKiller && <div className="p-2 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-xl hover:scale-110 hover:shadow-md transition-all cursor-help" title="Giant Killer"><Axe size={18}/></div>}
                                   {team.vol > 0.08 && <div className="p-2 bg-purple-50 dark:bg-purple-500/10 text-purple-500 rounded-xl hover:scale-110 hover:shadow-md transition-all cursor-help" title="Highly Volatile"><Dices size={18}/></div>}
@@ -368,19 +365,46 @@ export default function ShuttleSquadsPro() {
                   {/* 4. H2H PREDICTOR */}
                   {activeTab === 'h2h' && (
                     <div className="space-y-10 max-w-4xl mx-auto animate-fade-in">
-                      <div className="grid grid-cols-1 md:grid-cols-7 gap-6 items-center">
-                        <div className="md:col-span-3 bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/50 p-8 rounded-[2rem] shadow-lg shadow-blue-500/5 hover:-translate-y-2 transition-transform duration-500 relative overflow-hidden">
+                      <div className="grid grid-cols-1 md:grid-cols-7 gap-6 items-start">
+                        {/* BLUE CORNER */}
+                        <div className="md:col-span-3 bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/50 p-8 rounded-[2rem] shadow-lg shadow-blue-500/5 transition-transform duration-500 relative overflow-hidden">
                           <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
                           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400 mb-4 block">Blue Corner</label>
-                          <select className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer" value={teamA} onChange={(e) => setTeamA(e.target.value)}>{data.map(t => <option key={t.team} value={t.team}>{t.team}</option>)}</select>
+                          <select className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer mb-6" value={teamA} onChange={(e) => setTeamA(e.target.value)}>{data.map(t => <option key={t.team} value={t.team}>{t.team}</option>)}</select>
+                          
+                          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between text-center">
+                            <div>
+                                <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500">Career Matches</p>
+                                <p className="font-mono font-black text-lg text-slate-700 dark:text-slate-300 mt-1">{data.find(t=>t.team===teamA)?.careerMatches || 0}</p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500">All-Time WR</p>
+                                <p className="font-mono font-black text-lg text-slate-700 dark:text-slate-300 mt-1">{data.find(t=>t.team===teamA)?.careerWinRate || 0}%</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="md:col-span-1 flex justify-center"><div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full shadow-inner animate-pulse"><Swords size={28} className="text-slate-400 dark:text-slate-500" /></div></div>
-                        <div className="md:col-span-3 bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900/50 p-8 rounded-[2rem] shadow-lg shadow-red-500/5 hover:-translate-y-2 transition-transform duration-500 relative overflow-hidden">
+
+                        <div className="md:col-span-1 flex justify-center mt-8 md:mt-16"><div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full shadow-inner animate-pulse"><Swords size={28} className="text-slate-400 dark:text-slate-500" /></div></div>
+                        
+                        {/* RED CORNER */}
+                        <div className="md:col-span-3 bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900/50 p-8 rounded-[2rem] shadow-lg shadow-red-500/5 transition-transform duration-500 relative overflow-hidden">
                           <div className="absolute top-0 left-0 w-2 h-full bg-red-500"></div>
                           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 dark:text-red-400 mb-4 block">Red Corner</label>
-                          <select className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold dark:text-slate-200 outline-none focus:ring-2 focus:ring-red-500 transition-all cursor-pointer" value={teamB} onChange={(e) => setTeamB(e.target.value)}>{data.map(t => <option key={t.team} value={t.team}>{t.team}</option>)}</select>
+                          <select className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl font-bold dark:text-slate-200 outline-none focus:ring-2 focus:ring-red-500 transition-all cursor-pointer mb-6" value={teamB} onChange={(e) => setTeamB(e.target.value)}>{data.map(t => <option key={t.team} value={t.team}>{t.team}</option>)}</select>
+                          
+                          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between text-center">
+                            <div>
+                                <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500">Career Matches</p>
+                                <p className="font-mono font-black text-lg text-slate-700 dark:text-slate-300 mt-1">{data.find(t=>t.team===teamB)?.careerMatches || 0}</p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500">All-Time WR</p>
+                                <p className="font-mono font-black text-lg text-slate-700 dark:text-slate-300 mt-1">{data.find(t=>t.team===teamB)?.careerWinRate || 0}%</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                      
                       {teamA !== teamB && (() => {
                           const tAData = data.find(t=>t.team===teamA) || {power_rating: 1500, dq: 1.0};
                           const tBData = data.find(t=>t.team===teamB) || {power_rating: 1500, dq: 1.0};
@@ -390,7 +414,7 @@ export default function ShuttleSquadsPro() {
                           const favorite = pA > 0.5 ? teamA : teamB;
 
                           return (
-                              <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 border border-slate-800 text-white p-12 rounded-[3rem] text-center shadow-2xl relative overflow-hidden group animate-scale-up">
+                              <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 border border-slate-800 text-white p-12 rounded-[3rem] text-center shadow-2xl relative overflow-hidden group animate-scale-up mt-10">
                                   <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
                                   <p className="relative z-10 uppercase tracking-[0.3em] text-[10px] font-black text-indigo-400 mb-8 flex items-center justify-center gap-3"><Zap size={14} className="fill-indigo-400 animate-pulse"/> AI Telemetry Result <Zap size={14} className="fill-indigo-400 animate-pulse"/></p>
                                   <div className="relative z-10 flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16 mb-10">
